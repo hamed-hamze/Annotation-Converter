@@ -10,9 +10,10 @@ schema = [
     "tile_settings", "False_positive"
 ]
 
+
 def coco_to_dataframe(
-    path: str,
-    encoding: str = "utf-8"
+        path: str,
+        encoding: str = "utf-8"
 ) -> pd.DataFrame:
     """
     Converts COCO annotations from a JSON file to a pandas DataFrame.
@@ -62,8 +63,4 @@ def coco_to_dataframe(
 #%%Example usage
 data = coco_to_dataframe(path="dataset.json", path_to_images="train", name="tt")
 
-data.to_csv('mine.csv', index=False)
-#%%
-from Exporter import export_to_bina_coco
-
-export_to_bina_coco(data, output_path='train_coco.json')
+# data.to_csv('mine.csv', index=False)
