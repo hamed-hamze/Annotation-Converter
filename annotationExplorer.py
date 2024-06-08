@@ -76,6 +76,7 @@ import xml.etree.ElementTree as ET
 class AnnotationExplorer:
     def __init__(self, zip_path: str):
         self.zip_path = zip_path
+        self.dataset_name = os.path.basename(self.zip_path)
         self.extract_dir = "extracted_files"
         self.organized_dir = "organized_files"
         self._ensure_unique_organized_dir()
@@ -97,6 +98,79 @@ class AnnotationExplorer:
         with zipfile.ZipFile(self.zip_path, 'r') as zip_ref:
             zip_ref.extractall(self.extract_dir)
 
+    def create_folder_structure(self):
+        """Creates a folder structure based on the name of a given zip file.
+
+            It creates a main directory named `converted_{zip_file_name}` and initializes three
+            subdirectories and three JSON files within it.
+
+            Folder Structure:
+            The function creates the following folder structure:
+            converted_{zip_file_name}/
+            ├── train_images/
+            ├── validation_images/
+            └── cocos/
+                ├── train_coco.json
+                ├── val_coco.json
+                └── test_coco.json
+
+            JSON Structure:
+            Each JSON file is initialized with the following structure:
+            {
+                "info": {},
+                "images": [],
+                "categories": [],
+                "licenses": [],
+                "errors": [],
+                "annotations": [],
+                "labels": [],
+                "classifications": [],
+                "augmentation_settings": {},
+                "tile_settings": {},
+                "False_positive": {}
+            }
+            """
+        base_dir = f'converted_{self.dataset_name}'
+        # Create the base directory
+        os.makedirs(base_dir, exist_ok=True)
+
+        # Create the subdirectories
+        train_images_dir = os.path.join(base_dir, 'train_images')
+        validation_images_dir = os.path.join(base_dir, 'validation_images')
+        cocos_dir = os.path.join(base_dir, 'cocos')
+        os.makedirs(train_images_dir, exist_ok=True)
+        os.makedirs(validation_images_dir, exist_ok=True)
+        os.makedirs(cocos_dir, exist_ok=True)
+
+        # Define the default JSON structure
+        default_coco_structure = {
+            "info": {},
+            "images": [],
+            "categories": [],
+            "licenses": [],
+            "errors": [],
+            "annotations": [],
+            "labels": [],
+            "classifications": [],
+            "augmentation_settings": {},
+            "tile_settings": {},
+            "False_positive": {}
+        }
+
+        # List of coco files to create
+        coco_files = ['val_coco.json', 'test_coco.json']
+
+        # Create the coco JSON files with the default structure
+        for coco_file in coco_files:
+            coco_file_path = os.path.join(cocos_dir, coco_file)
+            with open(coco_file_path, 'w') as f:
+                json.dump(default_coco_structure, f, indent=4)
+
+        print(f"Folder structure and JSON files created under {base_dir}")
+
+    #TODO include the create_folder function below to move images and annots to their folder
+    #TODO refactor format converters into one class
+    #TODO go through the whole proccess
     def organize_files_and_identify_format(self):
         """
         Identifies the annotation format and organizes files into separate folders.
@@ -195,6 +269,7 @@ class AnnotationExplorer:
         self.organize_files_and_identify_format()
         self.cleanup()
         return {
+            'dataset_name': self.dataset_name,
             'annotation_format': self.identified_format,
             'num_images': self.num_images,
             'num_annotations_files': self.num_annotations
