@@ -53,7 +53,7 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 import os
 from tqdm import tqdm
-from Df2coco import export_to_bina_coco
+from Df2coco import dataframe_to_bina_coco
 
 #%%
 schema = [

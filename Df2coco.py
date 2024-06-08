@@ -4,9 +4,6 @@ import numpy as np
 from tqdm import tqdm
 from Coco2df import coco_to_dataframe
 
-#%%
-# df = coco_to_dataframe(path="train/_annotations.coco.json", path_to_images="train", name="")
-
 
 #%%
 def dataframe_to_bina_coco(dataframe, output_path=None, cat_id_index=None):
@@ -164,7 +161,6 @@ def dataframe_to_bina_coco(dataframe, output_path=None, cat_id_index=None):
     with open(output_path, "w") as outfile:
         json.dump(obj=json_output, fp=outfile, indent=4)
     return [str(output_path)]
-
 
 #%%
 # export_to_bina_coco(df, output_path='cocoss.json')
