@@ -202,6 +202,6 @@ class AnnotationExplorer:
 
 
 #%% Example usage:
-explorer = AnnotationExplorer("Dental_1.v4i.coco.zip")
+explorer = AnnotationExplorer("Example Datasets/Apple Sorting.voc.zip")
 results = explorer.explore_and_organize()
 print(results)

@@ -61,6 +61,6 @@ def coco_to_dataframe(
 
 
 #%%Example usage
-data = coco_to_dataframe(path="dataset.json", path_to_images="train", name="tt")
+# data = coco_to_dataframe(path="dataset.json", path_to_images="train", name="tt")
 
 # data.to_csv('mine.csv', index=False)
