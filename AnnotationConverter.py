@@ -33,16 +33,17 @@ class AnnotationConverter:
             pd.DataFrame: DataFrame containing the aggregated annotations.
         """
         self.logger.info(f"Converting VOC annotations in {directory_path} to DataFrame")
+
+        img_data = []
+        ann_data = []
+        cat_data = []
+
+        img_id = 0
+        cat_id = 0
+        categories = {}
+        annotation_id = 0
+
         try:
-            img_data = []
-            ann_data = []
-            cat_data = []
-
-            img_id = 0
-            cat_id = 0
-            categories = {}
-            annotation_id = 0
-
             xml_files = [f for f in os.listdir(directory_path) if f.endswith('.xml')]
 
             for xml_file in tqdm(xml_files, desc="Processing XML files"):
@@ -106,17 +107,33 @@ class AnnotationConverter:
             'ann_iscrowd': 0
         }
 
-    def coco_to_dataframe(self, path: str, encoding: str = "utf-8") -> pd.DataFrame:
-        self.logger.info(f"Converting COCO annotations in {path} to DataFrame")
+    def coco_to_dataframe(self, folder: str, encoding: str = "utf-8") -> pd.DataFrame:
+        self.logger.info(f"Converting COCO annotations in folder {folder} to DataFrame")
+
+        all_images = []
+        all_categories = []
+        all_annotations = []
+
         try:
-            with open(path, encoding=encoding) as cocojson:
-                annotations_json = json.load(cocojson)
+            json_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.endswith('.json')]
+            for json_file in json_files:
+                with open(json_file, encoding=encoding) as cocojson:
+                    annotations_json = json.load(cocojson)
 
-            images = pd.json_normalize(annotations_json["images"]).add_prefix("img_")
-            categories = pd.json_normalize(annotations_json["categories"]).add_prefix("cat_")
-            annotations = pd.json_normalize(annotations_json["annotations"]).add_prefix("ann_")
+                images = pd.json_normalize(annotations_json["images"]).add_prefix("img_")
+                categories = pd.json_normalize(annotations_json["categories"]).add_prefix("cat_")
+                annotations = pd.json_normalize(annotations_json["annotations"]).add_prefix("ann_")
 
-            return self._prepare_dataframe(images, annotations, categories)
+                all_images.append(images)
+                all_categories.append(categories)
+                all_annotations.append(annotations)
+
+            # Concatenate all DataFrames
+            images_df = pd.concat(all_images, ignore_index=True)
+            categories_df = pd.concat(all_categories, ignore_index=True)
+            annotations_df = pd.concat(all_annotations, ignore_index=True)
+
+            return self._prepare_dataframe(images_df, annotations_df, categories_df)
         except Exception as e:
             self.logger.error(f"Error converting COCO to DataFrame: {e}")
             raise
