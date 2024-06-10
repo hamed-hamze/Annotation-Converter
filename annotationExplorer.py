@@ -76,29 +76,14 @@ import xml.etree.ElementTree as ET
 class AnnotationExplorer:
     def __init__(self, zip_path: str):
         self.zip_path = zip_path
-        self.dataset_name = os.path.basename(self.zip_path)
+        # Create the folder structure and get the base directory and other paths
+        self.base_dir, self.train_images_dir, self.cocos_dir = self._create_folder_structure()
         self.extract_dir = "extracted_files"
-        self.organized_dir = "organized_files"
-        self._ensure_unique_organized_dir()
         self.identified_format = None
         self.num_images = 0
         self.num_annotations = 0
 
-    def _ensure_unique_organized_dir(self):
-        """Ensures that the organized directory has a unique name."""
-        base_dir = self.organized_dir
-        counter = 1
-        while os.path.exists(self.organized_dir):
-            self.organized_dir = f"{base_dir}_{counter}"
-            counter += 1
-
-    def extract_zip(self):
-        """Extracts the zip file to a temporary directory."""
-        os.makedirs(self.extract_dir, exist_ok=True)
-        with zipfile.ZipFile(self.zip_path, 'r') as zip_ref:
-            zip_ref.extractall(self.extract_dir)
-
-    def create_folder_structure(self):
+    def _create_folder_structure(self):
         """Creates a folder structure based on the name of a given zip file.
 
             It creates a main directory named `converted_{zip_file_name}` and initializes three
@@ -130,8 +115,9 @@ class AnnotationExplorer:
                 "False_positive": {}
             }
             """
-        base_dir = f'converted_{self.dataset_name}'
+        dataset_name = os.path.basename(self.zip_path)
         # Create the base directory
+        base_dir = f'converted_{dataset_name}'
         os.makedirs(base_dir, exist_ok=True)
 
         # Create the subdirectories
@@ -168,7 +154,14 @@ class AnnotationExplorer:
 
         print(f"Folder structure and JSON files created under {base_dir}")
 
-    #TODO include the create_folder function below to move images and annots to their folder
+        return base_dir, train_images_dir, cocos_dir
+
+    def extract_zip(self):
+        """Extracts the zip file to a temporary directory."""
+        os.makedirs(self.extract_dir, exist_ok=True)
+        with zipfile.ZipFile(self.zip_path, 'r') as zip_ref:
+            zip_ref.extractall(self.extract_dir)
+
     #TODO refactor format converters into one class
     #TODO go through the whole proccess
     def organize_files_and_identify_format(self):
@@ -185,11 +178,10 @@ class AnnotationExplorer:
             str: The identified annotation format ('Pascal VOC', 'COCO', 'YOLO') or None if no format is recognized.
         """
 
-        annotations_dir = os.path.join(self.organized_dir, 'annotations')
-        images_dir = os.path.join(self.organized_dir, 'images')
-
+        annotations_dir = os.path.join(self.base_dir, 'annotations')
         os.makedirs(annotations_dir, exist_ok=True)
-        os.makedirs(images_dir, exist_ok=True)
+
+        images_dir = self.train_images_dir
 
         for root, _, files in os.walk(self.extract_dir):
             for file in files:
@@ -269,7 +261,7 @@ class AnnotationExplorer:
         self.organize_files_and_identify_format()
         self.cleanup()
         return {
-            'dataset_name': self.dataset_name,
+            'dataset_name': os.path.basename(self.zip_path),
             'annotation_format': self.identified_format,
             'num_images': self.num_images,
             'num_annotations_files': self.num_annotations
@@ -277,6 +269,6 @@ class AnnotationExplorer:
 
 
 #%% Example usage:
-explorer = AnnotationExplorer("Example Datasets/Apple Sorting.voc.zip")
+explorer = AnnotationExplorer("Example Datasets/Dental_1.v4i.coco.zip")
 results = explorer.explore_and_organize()
 print(results)
