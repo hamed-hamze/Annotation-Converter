@@ -1,69 +1,4 @@
 #%%
-"""
-AnnotationExplorer Class Documentation
----------------------------------------
-
-This class is designed to explore a zip file containing annotation files for object detection tasks.
-It identifies the format of the annotation files within the zip archive, supporting three common formats:
-Pascal VOC XML, YOLO, and COCO JSON. The class organizes the files into separate folders based on their type and
- handles nested folders within the zip file structure, ensuring that annotation files located at any level of nesting are properly detected.
-
-Class Usage:
-    explorer = AnnotationExplorer(zip_path)
-    results = explorer.explore_and_organize()
-    print(f"Annotation format detected: {results['annotation_format']}")
-    print(f"Number of images: {results['num_images']}")
-    print(f"Number of annotation files: {results['num_annotations_files']}")
-
-Class Methods:
-    1. __init__(self, zip_path: str)
-        - Initializes the AnnotationExplorer object with the path to the zip file containing annotation data.
-        - Ensures that the organized directory has a unique name to avoid conflicts.
-        - Initializes attributes to store the identified format, and the number of images and annotation files.
-
-    2. _ensure_unique_organized_dir(self)
-        - Ensures that the organized directory has a unique name by appending a counter if necessary.
-
-    3. extract_zip(self)
-        - Extracts the contents of the zip file to a temporary directory for further processing.
-
-    4. organize_files_and_identify_format(self)
-        - Identifies the annotation format and organizes files into separate folders.
-        - Creates separate folders for annotation files based on their format:
-          - 'annotations/xml' for Pascal VOC
-          - 'annotations/coco' for COCO
-          - 'annotations/yolo' for YOLO
-          - 'images' for all image files
-        - Updates the identified format and counts the number of images and annotation files.
-        - Returns the identified annotation format.
-
-    5. _move_file(self, file_path: str, destination_folder: str)
-        - Moves a file to the specified destination folder, creating the folder if it does not exist.
-
-    6. _is_pascal_voc(self, file_path: str) -> bool
-        - Checks if the given file is a Pascal VOC XML annotation file.
-        - Returns True if the file is in Pascal VOC XML format, False otherwise.
-
-    7. _is_yolo(self, file_path: str) -> bool
-        - Checks if the given file is a YOLO annotation file.
-        - Returns True if the file is in YOLO format, False otherwise.
-
-    8. _is_coco(self, file_path: str) -> bool
-        - Checks if the given file is a COCO JSON annotation file.
-        - Returns True if the file is in COCO JSON format, False otherwise.
-
-    9. cleanup(self)
-        - Cleans up the extracted files while keeping organized images and annotations folders.
-
-    10. explore_and_organize(self)
-        - Main method to extract, organize, identify format, and cleanup.
-        - Returns a dictionary containing the identified annotation format, the number of images, and the number of annotation files.
-
-Note:
-    - The AnnotationExplorer class is designed to be instantiated with the path to a zip file containing annotation data.
-    - It provides methods to explore the zip file, identify the annotation format, and clean up temporary files.
-    - The class is robust and handles nested folders within the zip file structure.
-"""
 
 #%%
 import zipfile
@@ -71,13 +6,13 @@ import os
 import shutil
 import json
 import xml.etree.ElementTree as ET
-
+#TODO use logging and typing
 
 class AnnotationExplorer:
     def __init__(self, zip_path: str):
         self.zip_path = zip_path
         # Create the folder structure and get the base directory and other paths
-        self.base_dir, self.train_images_dir, self.cocos_dir = self._create_folder_structure()
+        self.base_dir, self.train_images_dir, self.cocos_dir, self.annotations_dir = self._create_folder_structure()
         self.extract_dir = "extracted_files"
         self.identified_format = None
         self.num_images = 0
@@ -95,7 +30,7 @@ class AnnotationExplorer:
             ├── train_images/
             ├── validation_images/
             └── cocos/
-                ├── train_coco.json
+                ├── cocos_dir.json
                 ├── val_coco.json
                 └── test_coco.json
 
@@ -124,9 +59,12 @@ class AnnotationExplorer:
         train_images_dir = os.path.join(base_dir, 'train_images')
         validation_images_dir = os.path.join(base_dir, 'validation_images')
         cocos_dir = os.path.join(base_dir, 'cocos')
+        annotations_dir = os.path.join(base_dir, 'annotations')
+
         os.makedirs(train_images_dir, exist_ok=True)
         os.makedirs(validation_images_dir, exist_ok=True)
         os.makedirs(cocos_dir, exist_ok=True)
+        os.makedirs(annotations_dir, exist_ok=True)
 
         # Define the default JSON structure
         default_coco_structure = {
@@ -154,7 +92,7 @@ class AnnotationExplorer:
 
         print(f"Folder structure and JSON files created under {base_dir}")
 
-        return base_dir, train_images_dir, cocos_dir
+        return base_dir, train_images_dir, cocos_dir, annotations_dir
 
     def extract_zip(self):
         """Extracts the zip file to a temporary directory."""
@@ -162,8 +100,6 @@ class AnnotationExplorer:
         with zipfile.ZipFile(self.zip_path, 'r') as zip_ref:
             zip_ref.extractall(self.extract_dir)
 
-    #TODO refactor format converters into one class
-    #TODO go through the whole proccess
     def organize_files_and_identify_format(self):
         """
         Identifies the annotation format and organizes files into separate folders.
@@ -177,10 +113,7 @@ class AnnotationExplorer:
         Returns:
             str: The identified annotation format ('Pascal VOC', 'COCO', 'YOLO') or None if no format is recognized.
         """
-
-        annotations_dir = os.path.join(self.base_dir, 'annotations')
-        os.makedirs(annotations_dir, exist_ok=True)
-
+        annotations_dir = self.annotations_dir
         images_dir = self.train_images_dir
 
         for root, _, files in os.walk(self.extract_dir):
@@ -269,6 +202,6 @@ class AnnotationExplorer:
 
 
 #%% Example usage:
-explorer = AnnotationExplorer("Example Datasets/Dental_1.v4i.coco.zip")
-results = explorer.explore_and_organize()
-print(results)
+# explorer = AnnotationExplorer("New folder/CarLicencePlate.zip")
+# results = explorer.explore_and_organize()
+# print(results)

@@ -107,6 +107,7 @@ class AnnotationConverter:
             'ann_iscrowd': 0
         }
 
+    #TODO reindex the merged coco file
     def coco_to_dataframe(self, folder: str, encoding: str = "utf-8") -> pd.DataFrame:
         self.logger.info(f"Converting COCO annotations in folder {folder} to DataFrame")
 
@@ -245,13 +246,12 @@ class AnnotationConverter:
             json.dump(obj=json_output, fp=outfile, indent=4)
         return [str(output_path)]
 
-
 #%%
 # Example usage
-directory_path = 'converted_Dental_1.v4i.coco.zip/annotations/coco/_annotations.coco.json'
-annotation_converter = AnnotationConverter()
-voc_df = annotation_converter.coco_to_dataframe(directory_path)
-print(voc_df.head())
-voc_df.to_csv('mine.csv', index=False)
-annotation_converter.dataframe_to_bina_coco(voc_df,
-                                            output_path="converted_Dental_1.v4i.coco.zip/cocos/train_coco.json", )
+# directory_path = 'converted_CarLicencePlate.zip/annotations/coco'
+# annotation_converter = AnnotationConverter()
+# voc_df = annotation_converter.coco_to_dataframe(directory_path)
+# print(voc_df.head())
+# # voc_df.to_csv('mine.csv', index=False)
+# annotation_converter.dataframe_to_bina_coco(voc_df,
+#                                             output_path="converted_CarLicencePlate.zip/cocos/train_coco.json", )
