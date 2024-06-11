@@ -6,50 +6,28 @@ import os
 import shutil
 import json
 import xml.etree.ElementTree as ET
-#TODO use logging and typing
+import logging
+import pandas as pd
+from typing import Tuple, Optional, Dict, List
+
+
 
 class AnnotationExplorer:
-    def __init__(self, zip_path: str):
-        self.zip_path = zip_path
+    def __init__(self, zip_path: str) -> None:
+        self.zip_path: str = zip_path
         # Create the folder structure and get the base directory and other paths
         self.base_dir, self.train_images_dir, self.cocos_dir, self.annotations_dir = self._create_folder_structure()
-        self.extract_dir = "extracted_files"
-        self.identified_format = None
-        self.num_images = 0
-        self.num_annotations = 0
+        self.extract_dir: str = "extracted_files"
+        self.identified_format: Optional[str] = None
+        self.num_images: int = 0
+        self.num_annotations: int = 0
 
-    def _create_folder_structure(self):
-        """Creates a folder structure based on the name of a given zip file.
+        # Setup logging
+        logging.basicConfig(level=logging.INFO)
+        self.logger = logging.getLogger(__name__)
 
-            It creates a main directory named `converted_{zip_file_name}` and initializes three
-            subdirectories and three JSON files within it.
-
-            Folder Structure:
-            The function creates the following folder structure:
-            converted_{zip_file_name}/
-            ├── train_images/
-            ├── validation_images/
-            └── cocos/
-                ├── cocos_dir.json
-                ├── val_coco.json
-                └── test_coco.json
-
-            JSON Structure:
-            Each JSON file is initialized with the following structure:
-            {
-                "info": {},
-                "images": [],
-                "categories": [],
-                "licenses": [],
-                "errors": [],
-                "annotations": [],
-                "labels": [],
-                "classifications": [],
-                "augmentation_settings": {},
-                "tile_settings": {},
-                "False_positive": {}
-            }
-            """
+    def _create_folder_structure(self) -> Tuple[str, str, str, str]:
+        """Creates a folder structure based on the name of a given zip file."""
         dataset_name = os.path.basename(self.zip_path)
         # Create the base directory
         base_dir = f'converted_{dataset_name}'
@@ -90,29 +68,19 @@ class AnnotationExplorer:
             with open(coco_file_path, 'w') as f:
                 json.dump(default_coco_structure, f, indent=4)
 
-        print(f"Folder structure and JSON files created under {base_dir}")
+        # self.logger.info(f"creating folders structure")
 
         return base_dir, train_images_dir, cocos_dir, annotations_dir
 
-    def extract_zip(self):
+    def extract_zip(self) -> None:
         """Extracts the zip file to a temporary directory."""
         os.makedirs(self.extract_dir, exist_ok=True)
         with zipfile.ZipFile(self.zip_path, 'r') as zip_ref:
             zip_ref.extractall(self.extract_dir)
+        self.logger.info(f"Extracted zip file to {self.extract_dir}")
 
-    def organize_files_and_identify_format(self):
-        """
-        Identifies the annotation format and organizes files into separate folders.
-
-        Creates separate folders for annotation files based on their format:
-        - 'annotations/xml' for Pascal VOC
-        - 'annotations/coco' for COCO
-        - 'annotations/yolo' for YOLO
-        - 'images' for all image files
-
-        Returns:
-            str: The identified annotation format ('Pascal VOC', 'COCO', 'YOLO') or None if no format is recognized.
-        """
+    def organize_files_and_identify_format(self) -> None:
+        """Identifies the annotation format and organizes files into separate folders."""
         annotations_dir = self.annotations_dir
         images_dir = self.train_images_dir
 
@@ -138,7 +106,9 @@ class AnnotationExplorer:
                         self.identified_format = 'COCO'
                         self.num_annotations += 1
 
-    def _move_file(self, file_path: str, destination_folder: str):
+        self.logger.info(f"Moved and Organized files, the identified format is: {self.identified_format}")
+
+    def _move_file(self, file_path: str, destination_folder: str) -> None:
         """Moves a file to the specified destination folder, renaming the file if necessary to avoid collisions."""
         os.makedirs(destination_folder, exist_ok=True)
 
@@ -189,7 +159,7 @@ class AnnotationExplorer:
             pass
         return False
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Cleans up the extracted files while keeping organized images and annotations folders."""
         for root, dirs, files in os.walk(self.extract_dir, topdown=False):
             for file in files:
@@ -198,8 +168,9 @@ class AnnotationExplorer:
                 shutil.rmtree(os.path.join(root, dir))
         if os.path.exists(self.extract_dir):
             os.rmdir(self.extract_dir)
+        self.logger.info(f"Cleaned up extracted files in {self.extract_dir}")
 
-    def explore_and_organize(self):
+    def explore_and_organize(self) -> Dict[str, Optional[str]]:
         """Main method to extract, organize, identify format, and cleanup."""
         self.extract_zip()
         self.organize_files_and_identify_format()
@@ -210,7 +181,6 @@ class AnnotationExplorer:
             'num_images': self.num_images,
             'num_annotations_files': self.num_annotations
         }
-
 
 #%% Example usage:
 # explorer = AnnotationExplorer("New folder/CarLicencePlate.zip")

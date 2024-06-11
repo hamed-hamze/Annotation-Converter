@@ -107,7 +107,6 @@ class AnnotationConverter:
             'ann_iscrowd': 0
         }
 
-    #TODO reindex the merged coco file
     def coco_to_dataframe(self, folder: str, encoding: str = "utf-8") -> pd.DataFrame:
         self.logger.info(f"Converting COCO annotations in folder {folder} to DataFrame")
 
@@ -123,7 +122,8 @@ class AnnotationConverter:
 
         try:
             json_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.endswith('.json')]
-            for json_file in json_files:
+
+            for json_file in tqdm(json_files, desc="Processing XML files"):
                 with open(json_file, encoding=encoding) as cocojson:
                     annotations_json = json.load(cocojson)
 
@@ -185,11 +185,12 @@ class AnnotationConverter:
 
         return df
 
-    @staticmethod
-    def dataframe_to_bina_coco(dataframe, output_path=None, cat_id_index=None):
+    def dataframe_to_bina_coco(self, dataframe, output_path=None, cat_id_index=None):
         """
         Writes COCO annotation files to disk (in JSON format) and returns the path to files.
         """
+        self.logger.info(f"Converting dataframe to bina_coco and saving it in {output_path}")
+
         df = dataframe.copy(deep=True)
         df = df.replace(r"^\s*$", np.nan, regex=True)
 
