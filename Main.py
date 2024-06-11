@@ -17,6 +17,7 @@ def explore_and_convert(zip_path):
     elif explorer.identified_format == 'COCO':
         coco_path = os.path.join(explorer.annotations_dir, 'coco')
         coco_df = converter.coco_to_dataframe(coco_path)
+        # coco_df.to_csv('mine.csv', index=False)
         converter.dataframe_to_bina_coco(coco_df, output_path=output_path)
     #TODO Yolo converter is not written yet
     elif explorer.identified_format == 'YOLO':

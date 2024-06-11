@@ -111,9 +111,15 @@ class AnnotationConverter:
     def coco_to_dataframe(self, folder: str, encoding: str = "utf-8") -> pd.DataFrame:
         self.logger.info(f"Converting COCO annotations in folder {folder} to DataFrame")
 
+        image_id_offset = 0
+        annotation_id_offset = 0
+
         all_images = []
         all_categories = []
         all_annotations = []
+
+        # Set to keep track of category names to avoid duplication
+        category_names_set = set()
 
         try:
             json_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.endswith('.json')]
@@ -121,13 +127,34 @@ class AnnotationConverter:
                 with open(json_file, encoding=encoding) as cocojson:
                     annotations_json = json.load(cocojson)
 
+                # Update image IDs to avoid conflicts
+                last_image_id = 0
+                for image in annotations_json["images"]:
+                    image["id"] += image_id_offset
+                    last_image_id = max(last_image_id, image["id"])
+
+                # Update annotation IDs to avoid conflicts
+                last_annotation_id = 0
+                for annotation in annotations_json["annotations"]:
+                    annotation["id"] += annotation_id_offset
+                    annotation["image_id"] += image_id_offset
+                    last_annotation_id = max(last_annotation_id, annotation["id"])
+
+                image_id_offset = last_image_id +1
+                annotation_id_offset = last_annotation_id +1
+
                 images = pd.json_normalize(annotations_json["images"]).add_prefix("img_")
-                categories = pd.json_normalize(annotations_json["categories"]).add_prefix("cat_")
                 annotations = pd.json_normalize(annotations_json["annotations"]).add_prefix("ann_")
 
                 all_images.append(images)
-                all_categories.append(categories)
                 all_annotations.append(annotations)
+
+                # Add unique categories
+                for category in annotations_json["categories"]:
+                    if category["name"] not in category_names_set:
+                        category_names_set.add(category["name"])
+                        categories = pd.json_normalize([category]).add_prefix("cat_")
+                        all_categories.append(categories)
 
             # Concatenate all DataFrames
             images_df = pd.concat(all_images, ignore_index=True)
