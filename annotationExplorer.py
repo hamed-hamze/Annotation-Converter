@@ -139,9 +139,20 @@ class AnnotationExplorer:
                         self.num_annotations += 1
 
     def _move_file(self, file_path: str, destination_folder: str):
-        """Moves a file to the specified destination folder."""
+        """Moves a file to the specified destination folder, renaming the file if necessary to avoid collisions."""
         os.makedirs(destination_folder, exist_ok=True)
-        shutil.move(file_path, destination_folder)
+
+        file_name = os.path.basename(file_path)
+        destination_path = os.path.join(destination_folder, file_name)
+        base, extension = os.path.splitext(file_name)
+        counter = 1
+
+        while os.path.exists(destination_path):
+            new_file_name = f"{base}_{counter}{extension}"
+            destination_path = os.path.join(destination_folder, new_file_name)
+            counter += 1
+
+        shutil.move(file_path, destination_path)
 
     def _is_pascal_voc(self, file_path: str) -> bool:
         """Checks if the file is a Pascal VOC XML annotation."""
